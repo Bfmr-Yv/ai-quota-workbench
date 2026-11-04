@@ -1,0 +1,38 @@
+# 编译产物（由 部署.ps1 自动重新生成）
+*.exe
+*.dll
+*.pdb
+
+# 鲸鱼娘桌宠的 Python 运行时：体积大、平台相关，首次使用另行下载
+鲸鱼娘/DeepSeek鲸鱼娘桌宠/runtime/
+
+# Python 缓存
+__pycache__/
+*.pyc
+
+# 临时文件与日志
+*.log
+*.tmp
+_launcher-probe.ps1
+_scoretest.cs
+_noticetest.cs
+
+# 本机专属，不入库
+archive/
+*.lnk
+
+# 桌宠用户配置（含窗口位置等个人设置）
+鲸鱼娘/DeepSeek鲸鱼娘桌宠/config.json
+
+# 凭据：任何 key、token、cookie 都不得提交
+*.key
+*.pem
+*.pfx
+auth.json
+.env
+secrets.json
+
+# 编辑器
+.vs/
+.vscode/
+.idea/

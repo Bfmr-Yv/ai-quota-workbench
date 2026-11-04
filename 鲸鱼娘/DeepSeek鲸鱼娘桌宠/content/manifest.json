@@ -1,0 +1,10 @@
+{
+  "content_version": 1,
+  "app_min": "1.1.0",
+  "files": {
+    "actions.json": {
+      "sha256": "db5961c11580d90538f888d2e96970847e2f010e27514518cf6b8d8753bbc06d",
+      "bytes": 3988
+    }
+  }
+}
