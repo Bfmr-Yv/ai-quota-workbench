@@ -6,6 +6,8 @@
 
 ## 快速开始
 
+> 换一台电脑从零部署，请看 **[新电脑部署.md](新电脑部署.md)**。
+
 ```powershell
 # 1. 只读自检：确认依赖、网关、模型目录与各渠道额度
 powershell -ExecutionPolicy Bypass -File 部署.ps1 -Check
