@@ -1,4 +1,4 @@
-﻿// Magpie 网关守护 + 自建路由池（托盘常驻）
+// Magpie 网关守护 + 自建路由池（托盘常驻）
 //
 // 下游：Cursor。上游：Magpie (127.0.0.1:3425)。
 //
@@ -496,6 +496,13 @@ namespace MagpieGatewayKeeper
                                     continue;
                                 }
                                 list.Add(o);
+
+                                // 顺手同步成员画像：上下文窗口与推理档位。
+                                // 目录每次刷新都会走到这里，画像自动跟上上游变化。
+                                if (id != null)
+                                {
+                                    SyncProfile(d);
+                                }
                             }
 
                             root["data"] = list.ToArray();
@@ -510,6 +517,60 @@ namespace MagpieGatewayKeeper
             }
 
             Write(ctx, status, headers, body);
+        }
+
+        /// <summary>
+        /// 从一条目录条目读取画像，分发给所有引用了该模型的池。
+        /// 同一模型可能被多个池引用，逐池设置即可。
+        /// </summary>
+        private void SyncProfile(Dictionary<string, object> d)
+        {
+            object idv2;
+            string id = (d.TryGetValue("id", out idv2) ? idv2 : null) as string;
+            if (string.IsNullOrEmpty(id))
+            {
+                return;
+            }
+
+            int ctx = 0;
+            object cv;
+            if (d.TryGetValue("context_length", out cv) && cv != null)
+            {
+                try { ctx = Convert.ToInt32(cv); } catch { ctx = 0; }
+            }
+
+            string[] levels = null;
+            object lv;
+            if (d.TryGetValue("reasoning_levels", out lv))
+            {
+                object[] arr2 = lv as object[];
+                if (arr2 != null)
+                {
+                    List<string> tmp = new List<string>();
+                    foreach (object x in arr2)
+                    {
+                        string s = x as string;
+                        if (!string.IsNullOrEmpty(s))
+                        {
+                            tmp.Add(s);
+                        }
+                    }
+                    if (tmp.Count > 0)
+                    {
+                        levels = tmp.ToArray();
+                    }
+                }
+            }
+
+            if (ctx <= 0 && levels == null)
+            {
+                return;
+            }
+
+            foreach (PoolScheduler s in Schedulers.Values)
+            {
+                s.ApplyProfile(id, ctx, levels);
+            }
         }
 
         /// <summary>
@@ -597,8 +658,19 @@ namespace MagpieGatewayKeeper
             string session = requested + "|" + SessionFingerprint(payload);
             string remembered = State.Get(session);
 
-            // 调度器按「记忆优先 + 额度排序 + 冷却排除」给出尝试顺序
-            List<MemberHealth> order = scheduler.BuildOrder(remembered);
+            // 估算本轮上下文规模，用于容量过滤。
+            // 实测表明超出窗口时上游会静默截断并照常返回 200，用户只会感到「失忆」，
+            // 所以必须在候选阶段就排除装不下的成员。
+            object msgsObj2;
+            object[] allMessages = null;
+            if (payload.TryGetValue("messages", out msgsObj2))
+            {
+                allMessages = msgsObj2 as object[];
+            }
+            int estimatedTokens = PoolScheduler.EstimateTokens(allMessages);
+
+            // 调度器按「容量够 → 记忆优先 → 额度排序 → 冷却排除」给出尝试顺序
+            List<MemberHealth> order = scheduler.BuildOrder(remembered, estimatedTokens);
 
             bool stream = false;
             object sv;
@@ -849,6 +921,38 @@ namespace MagpieGatewayKeeper
         {
             Dictionary<string, object> copy = new Dictionary<string, object>(payload);
             copy["model"] = modelId;
+
+            // 档位归一化：把请求里的推理档位映射到本成员支持的最近档位。
+            // 直接下发不支持的档位时，有的供应商会报错，有的会静默降级到默认值，
+            // 后者会让用户觉得「换了源就变笨」，所以在发送前统一处理。
+            MemberHealth h = null;
+            foreach (PoolScheduler s in Schedulers.Values)
+            {
+                h = s.Get(modelId);
+                if (h != null)
+                {
+                    break;
+                }
+            }
+
+            if (h != null)
+            {
+                string[] keys = { "reasoning_effort", "reasoning", "effort" };
+                foreach (string key in keys)
+                {
+                    object cur;
+                    if (!copy.TryGetValue(key, out cur) || cur == null)
+                    {
+                        continue;
+                    }
+                    string mapped = h.MapReasoningLevel(cur.ToString());
+                    if (mapped != null)
+                    {
+                        copy[key] = mapped;
+                    }
+                }
+            }
+
             return Encoding.UTF8.GetBytes(_json.Serialize(copy));
         }
 

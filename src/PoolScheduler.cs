@@ -43,9 +43,81 @@ namespace MagpieGatewayKeeper
         public int Order;
         public string LastError;
 
+        // ---------- 会话质量画像 ----------
+
+        // 上下文窗口（tokens）。0 表示未知，按保守值处理。
+        public int ContextLength;
+
+        // 支持的推理档位；空表示未知，不做档位归一化。
+        public string[] ReasoningLevels;
+
+        // 是否支持思考内容（reasoning_content）。未知为 true，避免误判。
+        public bool SupportsReasoning = true;
+
+
         public bool InCooldown
         {
             get { return DateTime.UtcNow < CooldownUntil; }
+        }
+
+        /// <summary>
+        /// 该成员能否容纳给定规模的上下文。
+        /// 未知窗口按 128k 保守处理，宁可少选也不要截断。
+        /// </summary>
+        public bool CanHold(int estimatedTokens)
+        {
+            int window = ContextLength > 0 ? ContextLength : 128000;
+            // 留 10% 余量给输出和系统提示
+            return estimatedTokens <= window * 0.9;
+        }
+
+        /// <summary>
+        /// 把请求里的推理档位映射到本成员支持的最接近档位。
+        /// 不支持的档位若原样下发，部分供应商会报错或静默降级。
+        /// 返回 null 表示保持原值不动。
+        /// </summary>
+        public string MapReasoningLevel(string requested)
+        {
+            if (string.IsNullOrEmpty(requested) || ReasoningLevels == null || ReasoningLevels.Length == 0)
+            {
+                return null;
+            }
+            string want = requested.Trim().ToLowerInvariant();
+            for (int i = 0; i < ReasoningLevels.Length; i++)
+            {
+                if (string.Equals(ReasoningLevels[i], want, StringComparison.OrdinalIgnoreCase))
+                {
+                    return null;  // 原生支持，不改
+                }
+            }
+            // 档位排序：从低到高
+            string[] ladder = { "none", "minimal", "low", "medium", "high", "xhigh", "max" };
+            int wantIdx = Array.IndexOf(ladder, want);
+            if (wantIdx < 0)
+            {
+                return null;
+            }
+            // 找距离最近的，同距离时优先不高于原档（避免过度消耗额度）
+            string best = null;
+            int bestDist = int.MaxValue;
+            int bestIdx = -1;
+            for (int i = 0; i < ReasoningLevels.Length; i++)
+            {
+                int idx = Array.IndexOf(ladder, ReasoningLevels[i].ToLowerInvariant());
+                if (idx < 0)
+                {
+                    continue;
+                }
+                int dist = Math.Abs(idx - wantIdx);
+                bool preferLower = idx <= wantIdx;
+                if (dist < bestDist || (dist == bestDist && preferLower && bestIdx > idx))
+                {
+                    best = ReasoningLevels[i];
+                    bestDist = dist;
+                    bestIdx = idx;
+                }
+            }
+            return best;
         }
 
         /// <summary>
@@ -107,6 +179,30 @@ namespace MagpieGatewayKeeper
         }
 
         /// <summary>
+        /// 从目录条目读取成员画像（上下文窗口、推理档位）。
+        /// 目录每次刷新都会调用，保证画像跟上上游变化。
+        /// </summary>
+        public void ApplyProfile(string modelId, int contextLength, string[] levels)
+        {
+            MemberHealth h = Get(modelId);
+            if (h == null)
+            {
+                return;
+            }
+            lock (_lock)
+            {
+                if (contextLength > 0)
+                {
+                    h.ContextLength = contextLength;
+                }
+                if (levels != null && levels.Length > 0)
+                {
+                    h.ReasoningLevels = levels;
+                }
+            }
+        }
+
+        /// <summary>
         /// 该池的成员数量。
         /// </summary>
         public int MemberCount()
@@ -138,50 +234,121 @@ namespace MagpieGatewayKeeper
         }
 
         /// <summary>
-        /// 按「记忆优先 + 额度排序 + 冷却排除」给出本次尝试顺序。
-        /// remembered 是同一对话上次成功的成员，只要它健康就排最前，保证无感。
+        /// 按「容量够 → 记忆优先 → 额度排序 → 冷却排除」给出本次尝试顺序。
+        ///
+        /// 会话质量保障的核心在第一步：上下文装不下的成员直接排除。
+        /// 池内成员窗口可能相差近十倍（如 trae 116k vs loomy 1M），
+        /// 长对话若切到小窗口成员，前面的内容会被供应商静默截断，
+        /// 表现为「失忆」——这比直接报错更难察觉，所以必须在候选阶段就挡掉。
+        ///
+        /// remembered 是同池同对话上次成功的成员。只要它健康且装得下，就排最前，
+        /// 让多轮对话尽量不换源；只有它不可用时才切，且切换后靠提示告知用户。
         /// </summary>
-        public List<MemberHealth> BuildOrder(string remembered)
+        public List<MemberHealth> BuildOrder(string remembered, int estimatedTokens)
         {
             List<MemberHealth> list = new List<MemberHealth>(All);
 
-            // 分数相同时按池内声明顺序决定先后。
-            // .NET 的 List<T>.Sort 不稳定，只比分数会让同分成员的顺序随机漂移，
-            // 破坏「按优先级」的语义，所以显式加上序号作为决胜条件。
-            for (int i = 0; i < list.Count; i++)
+            // 1. 容量过滤：装不下的成员直接出局，绝不参与尝试
+            List<MemberHealth> fits = new List<MemberHealth>();
+            foreach (MemberHealth h in list)
             {
-                list[i].Order = i;
+                if (h.CanHold(estimatedTokens))
+                {
+                    fits.Add(h);
+                }
+            }
+            // 全部装不下时退回全集：宁可让上游报错，也不要无成员可用
+            if (fits.Count == 0)
+            {
+                fits = list;
             }
 
-            list.Sort(delegate (MemberHealth a, MemberHealth b)
+            // 2. 稳定排序：分数优先，同分按声明顺序
+            for (int i = 0; i < fits.Count; i++)
+            {
+                fits[i].Order = i;
+            }
+            fits.Sort(delegate (MemberHealth a, MemberHealth b)
             {
                 int c = b.Score.CompareTo(a.Score);
                 return c != 0 ? c : a.Order.CompareTo(b.Order);
             });
 
+            // 3. 记忆提升：上次的成员如果仍健康且装得下，提到最前
             if (!string.IsNullOrEmpty(remembered))
             {
-                int idx = list.FindIndex(delegate (MemberHealth h)
+                int idx = fits.FindIndex(delegate (MemberHealth h)
                 {
                     return string.Equals(h.ModelId, remembered, StringComparison.OrdinalIgnoreCase);
                 });
-                // 只有在记忆成员仍然健康时才优先它，避免坚持用一个快耗尽的来源
-                if (idx > 0 && list[idx].Score > -1000 && list[idx].Ratio >= LowWatermark)
+                if (idx > 0)
                 {
-                    MemberHealth h = list[idx];
-                    list.RemoveAt(idx);
-                    list.Insert(0, h);
-                }
-                else if (idx > 0)
-                {
-                    // 记忆成员已不可用：不再排前面，但也不移除，仅作为后备
-                    MemberHealth h = list[idx];
-                    list.RemoveAt(idx);
-                    list.Add(h);
+                    MemberHealth h = fits[idx];
+                    bool healthy = h.Score > -1000 && (h.Ratio < 0 || h.Ratio >= LowWatermark);
+                    if (healthy)
+                    {
+                        fits.RemoveAt(idx);
+                        fits.Insert(0, h);
+                    }
+                    else
+                    {
+                        // 记忆成员不可用：降为后备，不删除也不优先
+                        fits.RemoveAt(idx);
+                        fits.Add(h);
+                    }
                 }
             }
 
-            return list;
+            return fits;
+        }
+
+        /// <summary>
+        /// 估算请求的上下文规模（tokens）。
+        /// 用字符数除以经验比例粗算：中文约 1 字 1 token，英文约 4 字符 1 token。
+        /// 宁可高估，因为低估会导致静默截断。
+        /// </summary>
+        public static int EstimateTokens(object[] messages)
+        {
+            if (messages == null)
+            {
+                return 0;
+            }
+            long chars = 0;
+            foreach (object o in messages)
+            {
+                Dictionary<string, object> m = o as Dictionary<string, object>;
+                if (m == null)
+                {
+                    continue;
+                }
+                object c;
+                if (m.TryGetValue("content", out c) && c != null)
+                {
+                    string s = c as string;
+                    if (s != null)
+                    {
+                        chars += s.Length;
+                    }
+                    else
+                    {
+                        object[] parts = c as object[];
+                        if (parts != null)
+                        {
+                            foreach (object p in parts)
+                            {
+                                Dictionary<string, object> pd = p as Dictionary<string, object>;
+                                object t;
+                                if (pd != null && pd.TryGetValue("text", out t) && t != null)
+                                {
+                                    chars += (t as string ?? string.Empty).Length;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            // 2 字符 ≈ 1 token 的保守估计（中英混合）
+            return (int)Math.Min(chars / 2, int.MaxValue);
         }
 
         /// <summary>
