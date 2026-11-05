@@ -106,6 +106,17 @@ namespace MagpieGatewayKeeper
             return slash > 0 ? modelId.Substring(0, slash) : modelId;
         }
 
+        /// <summary>
+        /// 该池的成员数量。
+        /// </summary>
+        public int MemberCount()
+        {
+            lock (_lock)
+            {
+                return _byModel.Count;
+            }
+        }
+
         public MemberHealth Get(string modelId)
         {
             lock (_lock)

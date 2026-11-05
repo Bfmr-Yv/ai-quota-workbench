@@ -226,3 +226,58 @@ Base URL 改为 `http://127.0.0.1:3426/v1`，API Key 仍是 `magpie-cursor-local
 ### 注意
 
 池成员顺序在 `src/MagpieGatewayKeeper.cs` 的 `PoolMembers` 数组里，调整后重跑 `部署.ps1` 即可。近额度阈值和冷却参数在 `src/PoolScheduler.cs` 顶部的常量里。
+## 2026-11-05 来源扩充与多池
+
+### 来源扩充
+
+原先只有 56 个模型对 Cursor 可见，实际可用 105 个。差额原因：**gateway key 白名单只放行了 58 条**，其余模型即使 Magpie 目录里有，调用也会被 403 拒绝（错误信息明确写 `may not use <model>`）。
+
+处理步骤：
+
+1. 备份原白名单到 `archive/gateway-key-backup.txt`
+2. 临时放宽白名单，逐个实测候选模型
+3. 只保留实测返回 200 的，写回白名单
+
+实测结果：20 个候选中 **17 个可用，3 个不可用**：
+
+| 模型 | 结果 | 原因 |
+|---|---|---|
+| `trae-cn/Doubao_1_6` | ✗ | 请求异常 |
+| `xiaomi/mimo-v2.5-pro` | ✗ | 上游 400 `Unsupported model`，小米已下线 |
+| `xiaomi/mimo-v2.5` | ✗ | 同上 |
+
+同时移除两条上游已消失的条目：`zcode/GLM-5.2`、`zcode/GLM-5-Turbo`（ZCode 目录里已不再提供）。
+
+**结果：白名单 73 条，目录暴露 73 条（72 个模型 + 1 个会话池占位）。**
+
+> 教训：`magpie models` 里有某个模型，不代表账号能用。必须先放宽白名单实测，再决定是否保留。
+
+### 多池
+
+守护程序从「单池」改为「多池」，每个池对外暴露一个模型 id：
+
+| 池 id | 显示名 | 成员数 | 用途 |
+|---|---|---|---|
+| `pool/deepseek-flash` | DeepSeek Flash Pool | 12 | DeepSeek 全系，含 Max/Pro 变体 |
+| `pool/glm` | GLM Pool | 13 | GLM 5.3 全系，含 Flash/FlashX/Max |
+| `pool/kimi` | Kimi Pool | 9 | K3 / K3.1 / Fast / K2.7 / K2.6 |
+| `pool/glm-flash` | GLM Flash Pool | 6 | GLM 5.3 Flash 系列，低延迟优先 |
+| `pool/doubao` | Doubao Pool | 6 | Seed 2.1 / Evolving / Code |
+
+关键设计：
+
+- **每个池一个独立调度器**，各自维护成员状态、额度快照、冷却时间
+- **记忆按池隔离**：同一对话在两个池中各自记住自己的来源，互不干扰
+- **额度刷新按 provider 去重**：多个池共用同一批渠道，每家只查一次 magpie，再分发给所有池
+
+托盘显示：单池时展示完整健康摘要；多池时显示各池名称与成员数。
+
+### 实测
+
+- 5 个池全部返回 200，各自选中合理成员（DeepSeek→WB、GLM→WB Flash、Kimi→WB K3、Doubao→Trae Seed Pro）
+- 流式请求均正常结束（`[DONE]`）
+- 池间记忆隔离验证通过
+
+### 改池的方式
+
+编辑 `src/MagpieGatewayKeeper.cs` 顶部的 `Pools` 数组，按 `PoolDefinition(id, name, contextLength, members[])` 增加或调整，重跑 `部署.ps1`。

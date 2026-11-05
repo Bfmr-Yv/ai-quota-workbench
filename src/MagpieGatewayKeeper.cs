@@ -41,9 +41,96 @@ namespace MagpieGatewayKeeper
         internal const int ProxyPort = 3426;
         internal const string ProxyBase = "http://127.0.0.1:3426/v1";
 
-        // 自建池对外暴露的模型 id
-        internal const string PoolId = "pool/deepseek-flash";
-        internal const string PoolName = "DeepSeek Flash Pool";
+        // 自建池。每个池对外暴露一个模型 id，内部在多个来源间调度。
+        // 成员顺序即默认优先级；调度器会再按额度与冷却重排。
+        internal static readonly PoolDefinition[] Pools =
+        {
+            new PoolDefinition(
+                "pool/deepseek-flash",
+                "DeepSeek Flash Pool",
+                1048576,
+                new[]
+                {
+                    new PoolMember("workbuddy-ai/deepseek-v4.1-flash-sg", "WB 额度"),
+                    new PoolMember("loomy/DeepSeek-V4.1-Flash", "Loomy 积分"),
+                    new PoolMember("trae-cn/deepseek-v4.1-flash", "Trae 积分"),
+                    new PoolMember("raccoon/sn-deepseek-v4-1-flash-1017", "小浣熊积分"),
+                    new PoolMember("trae-cn/DeepSeek-V4-Flash-max", "Trae Flash Max"),
+                    new PoolMember("loomy/mimo-v2.5", "Loomy MiMo"),
+                    new PoolMember("xiaomi/mimo-v2.6-flash", "小米 TP"),
+                    new PoolMember("xiaomi/mimo-v2.6-pro", "小米 TP Pro"),
+                    new PoolMember("trae-cn/DeepSeek-V4-Pro", "Trae Pro"),
+                    new PoolMember("trae-cn/DeepSeek-V4-Pro-max", "Trae Pro Max"),
+                    new PoolMember("deepseek/deepseek-flash", "官方 API 付费"),
+                    new PoolMember("deepseek/deepseek-v4-pro", "官方 API Pro")
+                }),
+
+            new PoolDefinition(
+                "pool/glm",
+                "GLM Pool",
+                1000000,
+                new[]
+                {
+                    new PoolMember("zcode/GLM-5.3-Flash", "ZCode Flash"),
+                    new PoolMember("zcode/GLM-5.3", "ZCode 5.3"),
+                    new PoolMember("workbuddy-ai/glm-5.3-flash", "WB Flash"),
+                    new PoolMember("workbuddy-ai/glm-5.3", "WB 5.3"),
+                    new PoolMember("trae-cn/glm-5.3-flash", "Trae Flash"),
+                    new PoolMember("trae-cn/glm-5.3", "Trae 5.3"),
+                    new PoolMember("trae-cn/glm-5.3-flashx", "Trae FlashX"),
+                    new PoolMember("trae-cn/glm-5.3-flash-max", "Trae Flash Max"),
+                    new PoolMember("trae-cn/glm-5.3-max", "Trae 5.3 Max"),
+                    new PoolMember("trae-cn/glm-5.3-flashx-max", "Trae FlashX Max"),
+                    new PoolMember("loomy/GLM-5.3-Flash", "Loomy Flash"),
+                    new PoolMember("raccoon/sn-glm-5-3-flash", "小浣熊 Flash"),
+                    new PoolMember("raccoon/sn-glm-5-3", "小浣熊 5.3")
+                }),
+
+            new PoolDefinition(
+                "pool/kimi",
+                "Kimi Pool",
+                1048576,
+                new[]
+                {
+                    new PoolMember("workbuddy-ai/kimi-k3", "WB K3"),
+                    new PoolMember("workbuddy-ai/kimi-k3.1-pro", "WB K3.1 Pro"),
+                    new PoolMember("kimi-work/k3-agent", "Kimi 会员 K3"),
+                    new PoolMember("kimi-work/k3d1-agent", "Kimi 会员 K3.1"),
+                    new PoolMember("kimi-work/k3d1-agent-fast", "Kimi 会员 Fast"),
+                    new PoolMember("workbuddy-ai/kimi-k3.1-pro-highspeed", "WB 高速版"),
+                    new PoolMember("raccoon/sn-kimi-k3", "小浣熊 K3"),
+                    new PoolMember("trae-cn/kimi-k2.7-code", "Trae K2.7"),
+                    new PoolMember("loomy/Kimi-k2.6", "Loomy K2.6")
+                }),
+
+            new PoolDefinition(
+                "pool/glm-flash",
+                "GLM Flash Pool",
+                1000000,
+                new[]
+                {
+                    new PoolMember("zcode/GLM-5.3-Flash", "ZCode Flash"),
+                    new PoolMember("workbuddy-ai/glm-5.3-flash", "WB Flash"),
+                    new PoolMember("trae-cn/glm-5.3-flash", "Trae Flash"),
+                    new PoolMember("trae-cn/glm-5.3-flashx", "Trae FlashX"),
+                    new PoolMember("loomy/GLM-5.3-Flash", "Loomy Flash"),
+                    new PoolMember("raccoon/sn-glm-5-3-flash", "小浣熊 Flash")
+                }),
+
+            new PoolDefinition(
+                "pool/doubao",
+                "Doubao Pool",
+                262144,
+                new[]
+                {
+                    new PoolMember("trae-cn/Doubao-Seed-2.1-Pro", "Seed 2.1 Pro"),
+                    new PoolMember("trae-cn/Doubao-Seed-2.1-Turbo", "Seed 2.1 Turbo"),
+                    new PoolMember("trae-cn/Doubao-Seed-Evolving", "Seed Evolving"),
+                    new PoolMember("trae-cn/Doubao-Seed-Code", "Seed Code"),
+                    new PoolMember("trae-cn/Doubao-Seed-2.1-Pro-max", "Seed Pro Max"),
+                    new PoolMember("trae-cn/Doubao-Seed-Evolving-max", "Seed Evolving Max")
+                })
+        };
 
         private const string MutexName = @"Local\MagpieGatewayKeeper.SingleInstance";
 
@@ -51,19 +138,6 @@ namespace MagpieGatewayKeeper
         internal const int QuotaRefreshSeconds = 120;
         internal const int FailuresBeforeRestart = 2;
         internal const int BootWaitSeconds = 20;
-
-        // 池成员，按顺序尝试。标签体现消耗性质，便于在托盘和日志里辨认。
-        internal static readonly PoolMember[] PoolMembers =
-        {
-            new PoolMember("workbuddy-ai/deepseek-v4.1-flash-sg", "WB 额度"),
-            new PoolMember("loomy/DeepSeek-V4.1-Flash", "Loomy 积分"),
-            new PoolMember("trae-cn/deepseek-v4.1-flash", "Trae 积分"),
-            new PoolMember("raccoon/sn-deepseek-v4-1-flash-1017", "小浣熊积分"),
-            new PoolMember("loomy/mimo-v2.5", "Loomy MiMo"),
-            new PoolMember("xiaomi/mimo-v2.6-flash", "小米 TP"),
-            new PoolMember("xiaomi/mimo-v2.6-pro", "小米 TP Pro"),
-            new PoolMember("deepseek/deepseek-flash", "官方 API 付费")
-        };
 
         [STAThread]
         private static void Main()
@@ -205,6 +279,25 @@ namespace MagpieGatewayKeeper
     }
 
     /// <summary>
+    /// 一个池的定义：对外暴露的 id、显示名、上下文长度，以及内部成员顺序。
+    /// </summary>
+    internal sealed class PoolDefinition
+    {
+        public readonly string Id;
+        public readonly string Name;
+        public readonly int ContextLength;
+        public readonly PoolMember[] Members;
+
+        public PoolDefinition(string id, string name, int contextLength, PoolMember[] members)
+        {
+            Id = id;
+            Name = name;
+            ContextLength = contextLength;
+            Members = members;
+        }
+    }
+
+    /// <summary>
     /// 池的记忆：每个对话上次成功的来源，切换后不会每轮从头试。
     /// </summary>
     internal sealed class PoolState
@@ -266,10 +359,18 @@ namespace MagpieGatewayKeeper
         private volatile bool _stopping;
 
         public readonly PoolState State = new PoolState();
-        public readonly PoolScheduler Scheduler = new PoolScheduler(Program.PoolMembers);
+
+        // 每个池一个独立调度器，各自维护自己的成员状态与额度
+        public readonly Dictionary<string, PoolScheduler> Schedulers =
+            new Dictionary<string, PoolScheduler>(StringComparer.OrdinalIgnoreCase);
 
         public GatewayProxy()
         {
+            foreach (PoolDefinition pool in Program.Pools)
+            {
+                Schedulers[pool.Id] = new PoolScheduler(pool.Members);
+            }
+
             _listener = new HttpListener();
             _listener.Prefixes.Add("http://127.0.0.1:" + Program.ProxyPort + "/");
         }
@@ -374,8 +475,11 @@ namespace MagpieGatewayKeeper
                         if (arr != null)
                         {
                             List<object> list = new List<object>();
-                            // 池条目放最前，便于在选择器顶部找到
-                            list.Add(BuildPoolEntry());
+                            // 所有池条目放最前，便于在选择器顶部找到
+                            foreach (PoolDefinition pool in Program.Pools)
+                            {
+                                list.Add(BuildPoolEntry(pool));
+                            }
 
                             foreach (object o in arr)
                             {
@@ -411,7 +515,7 @@ namespace MagpieGatewayKeeper
         /// <summary>
         /// 结构完整的池条目，字段对齐 Magpie 的普通模型，确保 Cursor 不会丢弃。
         /// </summary>
-        private static Dictionary<string, object> BuildPoolEntry()
+        private static Dictionary<string, object> BuildPoolEntry(PoolDefinition pool)
         {
             Dictionary<string, object> caps = new Dictionary<string, object>();
             caps["supports_tool_use"] = true;
@@ -420,7 +524,7 @@ namespace MagpieGatewayKeeper
             caps["supports_vision"] = false;
             caps["output_modalities"] = new object[] { "text" };
             caps["input_modalities"] = new object[] { "text" };
-            caps["context_length"] = 1048576;
+            caps["context_length"] = pool.ContextLength;
             caps["max_output_tokens"] = 65536;
             caps["reasoning_effort"] = new object[] { "low", "high" };
 
@@ -434,16 +538,16 @@ namespace MagpieGatewayKeeper
             pricing["input_cache_read"] = "0";
 
             Dictionary<string, object> e = new Dictionary<string, object>();
-            e["id"] = Program.PoolId;
+            e["id"] = pool.Id;
             e["object"] = "model";
             e["type"] = "model";
             e["created"] = 0;
             e["created_at"] = "2025-01-01T00:00:00Z";
             e["owned_by"] = "magpie-pool";
-            e["display_name"] = Program.PoolName;
-            e["context_length"] = 1048576;
-            e["context_window"] = 1048576;
-            e["max_input_tokens"] = 1048576;
+            e["display_name"] = pool.Name;
+            e["context_length"] = pool.ContextLength;
+            e["context_window"] = pool.ContextLength;
+            e["max_input_tokens"] = pool.ContextLength;
             e["max_output_tokens"] = 65536;
             e["reasoning"] = true;
             e["reasoning_levels"] = new object[] { "low", "high" };
@@ -481,17 +585,20 @@ namespace MagpieGatewayKeeper
             object mv;
             string requested = (payload.TryGetValue("model", out mv) ? mv : null) as string;
 
-            if (requested != Program.PoolId)
+            // 只有池 id 才走调度；其余请求原样透传给 Magpie
+            PoolScheduler scheduler;
+            if (string.IsNullOrEmpty(requested) || !Schedulers.TryGetValue(requested, out scheduler))
             {
                 ProxyStream(ctx, body);
                 return;
             }
 
-            string session = SessionFingerprint(payload);
+            // 会话记忆按「池 + 对话」分区，不同池各自的记忆互不干扰
+            string session = requested + "|" + SessionFingerprint(payload);
             string remembered = State.Get(session);
 
             // 调度器按「记忆优先 + 额度排序 + 冷却排除」给出尝试顺序
-            List<MemberHealth> order = Scheduler.BuildOrder(remembered);
+            List<MemberHealth> order = scheduler.BuildOrder(remembered);
 
             bool stream = false;
             object sv;
@@ -512,10 +619,10 @@ namespace MagpieGatewayKeeper
                     byte[] resp = ReadUpstream(ctx, memberBody, out status, out headers);
                     if (status >= 200 && status < 300)
                     {
-                        Scheduler.RecordSuccess(member.ModelId);
+                        scheduler.RecordSuccess(member.ModelId);
                         // 仅在来源切换、或有成员额度告急/掉线时附加说明
-                        string notice = (State.NotifyOnChange && Scheduler.ShouldNotify(remembered, member.ModelId))
-                            ? Scheduler.BuildSwitchNotice(remembered, member.ModelId, session)
+                        string notice = (State.NotifyOnChange && scheduler.ShouldNotify(remembered, member.ModelId))
+                            ? scheduler.BuildSwitchNotice(remembered, member.ModelId, session)
                             : null;
                         State.Set(session, member.ModelId, member.Label);
                         if (!string.IsNullOrEmpty(notice))
@@ -527,7 +634,7 @@ namespace MagpieGatewayKeeper
                         return;
                     }
                     // 失败：进入冷却，下一轮自动跳过，稍后回归
-                    Scheduler.RecordFailure(member.ModelId, "HTTP " + status);
+                    scheduler.RecordFailure(member.ModelId, "HTTP " + status);
                     continue;
                 }
 
@@ -552,7 +659,7 @@ namespace MagpieGatewayKeeper
                     streamResp = wex.Response as HttpWebResponse;
                     if (streamResp == null)
                     {
-                        Scheduler.RecordFailure(member.ModelId, wex.Message);
+                        scheduler.RecordFailure(member.ModelId, wex.Message);
                         continue;
                     }
                 }
@@ -560,7 +667,7 @@ namespace MagpieGatewayKeeper
                 int code = (int)streamResp.StatusCode;
                 if (code >= 200 && code < 300)
                 {
-                    Scheduler.RecordSuccess(member.ModelId);
+                    scheduler.RecordSuccess(member.ModelId);
                     State.Set(session, member.ModelId, member.Label);
                     using (streamResp)
                     {
@@ -587,7 +694,7 @@ namespace MagpieGatewayKeeper
                     return;
                 }
 
-                Scheduler.RecordFailure(member.ModelId, "HTTP " + code);
+                scheduler.RecordFailure(member.ModelId, "HTTP " + code);
                 streamResp.Close();
             }
 
@@ -1012,7 +1119,7 @@ namespace MagpieGatewayKeeper
 
             _statusItem = new ToolStripMenuItem("正在检查…") { Enabled = false };
             _gatewayItem = new ToolStripMenuItem("网关：" + Program.ProxyBase) { Enabled = false };
-            _poolItem = new ToolStripMenuItem("池：" + Program.PoolMembers.Length + " 个来源") { Enabled = false };
+            _poolItem = new ToolStripMenuItem("池：" + Program.Pools.Length + " 个池") { Enabled = false };
             _checkItem = new ToolStripMenuItem("立即检查网关与额度");
             _openMagpieItem = new ToolStripMenuItem("打开 Magpie 窗口");
             _copyHintItem = new ToolStripMenuItem("复制 Cursor 网关地址");
@@ -1083,7 +1190,7 @@ namespace MagpieGatewayKeeper
             }
             try
             {
-                RefreshQuotas(_proxy.Scheduler);
+                RefreshQuotas(_proxy.Schedulers.Values);
                 RefreshPoolText();
             }
             catch
@@ -1097,21 +1204,35 @@ namespace MagpieGatewayKeeper
 
         /// <summary>
         /// 逐个渠道读取额度并归一化。读不到的渠道保持「未知」，不阻断调度。
+        /// 多个池共用同一批渠道，因此按 provider 去重，每家只查一次，再分发给所有池。
         /// </summary>
-        private static void RefreshQuotas(PoolScheduler scheduler)
+        private static void RefreshQuotas(IEnumerable<PoolScheduler> schedulers)
         {
             JavaScriptSerializer json = new JavaScriptSerializer();
-            HashSet<string> done = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
-            foreach (MemberHealth h in scheduler.All)
+            // 先把所有池的成员按 provider 汇总，避免同一家重复调用 magpie
+            Dictionary<string, List<MemberHealth>> byProvider =
+                new Dictionary<string, List<MemberHealth>>(StringComparer.OrdinalIgnoreCase);
+
+            List<PoolScheduler> all = new List<PoolScheduler>(schedulers);
+            foreach (PoolScheduler s in all)
             {
-                string provider = PoolScheduler.ProviderOf(h.ModelId);
-                if (!done.Add(provider))
+                foreach (MemberHealth h in s.All)
                 {
-                    continue;
+                    string provider = PoolScheduler.ProviderOf(h.ModelId);
+                    List<MemberHealth> bucket;
+                    if (!byProvider.TryGetValue(provider, out bucket))
+                    {
+                        bucket = new List<MemberHealth>();
+                        byProvider[provider] = bucket;
+                    }
+                    bucket.Add(h);
                 }
+            }
 
-                string body = RunMagpie("quota " + provider + " --json");
+            foreach (KeyValuePair<string, List<MemberHealth>> kv in byProvider)
+            {
+                string body = RunMagpie("quota " + kv.Key + " --json");
                 if (string.IsNullOrEmpty(body))
                 {
                     continue;
@@ -1131,12 +1252,8 @@ namespace MagpieGatewayKeeper
                 double money = PoolScheduler.ExtractMoney(parsed);
                 DateTime? recoverAt = PoolScheduler.ExtractRecovery(parsed);
 
-                foreach (MemberHealth m in scheduler.All)
+                foreach (MemberHealth m in kv.Value)
                 {
-                    if (!string.Equals(PoolScheduler.ProviderOf(m.ModelId), provider, StringComparison.OrdinalIgnoreCase))
-                    {
-                        continue;
-                    }
                     if (ratio >= 0)
                     {
                         m.Ratio = ratio;
@@ -1154,7 +1271,11 @@ namespace MagpieGatewayKeeper
                 }
             }
 
-            scheduler.LastQuotaRefresh = DateTime.UtcNow;
+            DateTime now = DateTime.UtcNow;
+            foreach (PoolScheduler s in all)
+            {
+                s.LastQuotaRefresh = now;
+            }
         }
 
         private static string RunMagpie(string arguments)
@@ -1203,7 +1324,7 @@ namespace MagpieGatewayKeeper
                 bool ok = Program.ProbeGateway(out detail);
                 if (_proxy != null)
                 {
-                    RefreshQuotas(_proxy.Scheduler);
+                    RefreshQuotas(_proxy.Schedulers.Values);
                     RefreshPoolText();
                 }
                 if (ok)
@@ -1267,12 +1388,39 @@ namespace MagpieGatewayKeeper
                 return;
             }
             string last = _proxy.State.LastLabel;
-            string summary = _proxy.Scheduler.Summarize();
-            if (summary.Length > 160)
+
+            // 多个池时，只在托盘显示各池名称与人数；单池时显示完整健康摘要
+            if (Program.Pools.Length == 1)
             {
-                summary = summary.Substring(0, 160) + "…";
+                string summary = _proxy.Schedulers[Program.Pools[0].Id].Summarize();
+                if (summary.Length > 160)
+                {
+                    summary = summary.Substring(0, 160) + "…";
+                }
+                _poolItem.Text = (string.IsNullOrEmpty(last) ? "" : "最近 " + last + "｜") + summary;
+                return;
             }
-            _poolItem.Text = (string.IsNullOrEmpty(last) ? "" : "最近 " + last + "｜") + summary;
+
+            StringBuilder sb = new StringBuilder();
+            foreach (PoolDefinition pool in Program.Pools)
+            {
+                PoolScheduler s;
+                if (!_proxy.Schedulers.TryGetValue(pool.Id, out s))
+                {
+                    continue;
+                }
+                if (sb.Length > 0)
+                {
+                    sb.Append("  ");
+                }
+                sb.Append(pool.Name.Replace(" Pool", "")).Append('(').Append(s.MemberCount()).Append(')');
+            }
+            string head = Program.Pools.Length + " 个池：" + sb;
+            if (head.Length > 160)
+            {
+                head = head.Substring(0, 160) + "…";
+            }
+            _poolItem.Text = head;
         }
 
         private void OnHealthy()
@@ -1341,7 +1489,7 @@ namespace MagpieGatewayKeeper
                 _icon.ShowBalloonTip(4000, "已复制",
                     "Cursor 里填：\r\n" + Program.ProxyBase +
                     "\r\nAPI Key：" + Program.GatewayKey +
-                    "\r\n\r\n模型选 " + Program.PoolId + "（" + Program.PoolName + "）",
+                    "\r\n\r\n模型列表顶部有 " + Program.Pools.Length + " 个池可选",
                     ToolTipIcon.Info);
             }
             catch
