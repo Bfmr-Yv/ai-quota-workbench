@@ -350,3 +350,26 @@ Cursor 若发送 `medium` 或 `max`，而目标成员不支持，有的供应商
 - 容量余量（默认 90%）：`PoolScheduler.CanHold`
 - 档位映射阶梯：`PoolScheduler.MapReasoningLevel` 里的 `ladder` 数组
 - 低额度阈值（默认 10%）：`PoolScheduler.LowWatermark`
+## 2026-11-06 账号权限清理
+
+全池 41 个成员逐个实测，**39 可用 / 2 不可用**。
+
+不可用的两个是 WorkBuddy 免费账号的权限限制（目录里有，调用返回 400 `not allowed for user type [personal_free_user]`）：
+
+| 模型 | 结果 |
+|---|---|
+| `workbuddy-ai/kimi-k3.1-pro` | 400 无权限 |
+| `workbuddy-ai/kimi-k3.1-pro-highspeed` | 400 无权限 |
+
+另有两个同类情况的 `workbuddy-ai/grok-4.7`、`workbuddy-ai/gemini-3.8-flash` 虽不在池中，也从白名单移除，避免在模型列表里点了报错。
+
+处理：
+- 从 `pool/kimi-k3.1` 移除前两个（该池从 4 个成员降到 2 个）
+- 从 gateway-key 白名单移除全部 4 个，73 → **69 条**
+- 两个脚本的标签表同步删掉这 4 条
+
+**K2 池三个成员全部验证可用**：`kimi-work/k2d8-preview`、`loomy/Kimi-k2.6`、`trae-cn/kimi-k2.7-code`。
+
+### 教训
+
+`magpie models` 列出某个模型，不代表当前账号有权限调用。WorkBuddy 这类订阅型来源尤其明显：目录是全网可见的，权限按账号类型收紧。**新加成员前必须实测一次**，否则每次请求都会先撞一次 400 再回退，白白增加延迟。

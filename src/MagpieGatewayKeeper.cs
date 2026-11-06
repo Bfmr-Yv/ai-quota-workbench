@@ -1,4 +1,4 @@
-// Magpie 网关守护 + 自建路由池（托盘常驻）
+﻿// Magpie 网关守护 + 自建路由池（托盘常驻）
 //
 // 下游：Cursor。上游：Magpie (127.0.0.1:3425)。
 //
@@ -89,14 +89,14 @@ namespace MagpieGatewayKeeper
             // Kimi 系列跨三代（K2.6 / K3 / K3.1），混在一个池里切换等于换模型，
             // 会明显掉质量。按代际拆成三个池，池内才是真正的"同一模型不同部署"。
             // 注意 kimi-work/k3d1-agent 的显示名是「K3.1 Pro」，归 3.1 代而非 K3 代。
+            // workbuddy-ai/kimi-k3.1-pro 及 -highspeed 已移出：免费账号调用返回 400，
+            // 目录里有但账号无权限，留着只会让每次请求白撞一次错误。
             new PoolDefinition(
                 "pool/kimi-k3.1",
                 "Kimi K3.1 Pool",
                 1048576,
                 new[]
                 {
-                    new PoolMember("workbuddy-ai/kimi-k3.1-pro", "WB K3.1 Pro"),
-                    new PoolMember("workbuddy-ai/kimi-k3.1-pro-highspeed", "WB K3.1 高速"),
                     new PoolMember("kimi-work/k3d1-agent", "Kimi 会员 K3.1"),
                     new PoolMember("kimi-work/k3d1-agent-fast", "Kimi 会员 Fast")
                 }),
