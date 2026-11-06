@@ -86,21 +86,41 @@ namespace MagpieGatewayKeeper
                     new PoolMember("raccoon/sn-glm-5-3", "小浣熊 5.3")
                 }),
 
+            // Kimi 系列跨三代（K2.6 / K3 / K3.1），混在一个池里切换等于换模型，
+            // 会明显掉质量。按代际拆成三个池，池内才是真正的"同一模型不同部署"。
+            // 注意 kimi-work/k3d1-agent 的显示名是「K3.1 Pro」，归 3.1 代而非 K3 代。
             new PoolDefinition(
-                "pool/kimi",
-                "Kimi Pool",
+                "pool/kimi-k3.1",
+                "Kimi K3.1 Pool",
+                1048576,
+                new[]
+                {
+                    new PoolMember("workbuddy-ai/kimi-k3.1-pro", "WB K3.1 Pro"),
+                    new PoolMember("workbuddy-ai/kimi-k3.1-pro-highspeed", "WB K3.1 高速"),
+                    new PoolMember("kimi-work/k3d1-agent", "Kimi 会员 K3.1"),
+                    new PoolMember("kimi-work/k3d1-agent-fast", "Kimi 会员 Fast")
+                }),
+
+            new PoolDefinition(
+                "pool/kimi-k3",
+                "Kimi K3 Pool",
                 1048576,
                 new[]
                 {
                     new PoolMember("workbuddy-ai/kimi-k3", "WB K3"),
-                    new PoolMember("workbuddy-ai/kimi-k3.1-pro", "WB K3.1 Pro"),
-                    new PoolMember("kimi-work/k3-agent", "Kimi 会员 K3"),
-                    new PoolMember("kimi-work/k3d1-agent", "Kimi 会员 K3.1"),
-                    new PoolMember("kimi-work/k3d1-agent-fast", "Kimi 会员 Fast"),
-                    new PoolMember("workbuddy-ai/kimi-k3.1-pro-highspeed", "WB 高速版"),
                     new PoolMember("raccoon/sn-kimi-k3", "小浣熊 K3"),
-                    new PoolMember("trae-cn/kimi-k2.7-code", "Trae K2.7"),
-                    new PoolMember("loomy/Kimi-k2.6", "Loomy K2.6")
+                    new PoolMember("kimi-work/k3-agent", "Kimi 会员 K3")
+                }),
+
+            new PoolDefinition(
+                "pool/kimi-k2",
+                "Kimi K2 Pool",
+                262144,
+                new[]
+                {
+                    new PoolMember("kimi-work/k2d8-preview", "Kimi 会员 K2.8"),
+                    new PoolMember("loomy/Kimi-k2.6", "Loomy K2.6"),
+                    new PoolMember("trae-cn/kimi-k2.7-code", "Trae K2.7")
                 }),
 
             new PoolDefinition(
