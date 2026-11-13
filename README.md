@@ -26,16 +26,21 @@ Cursor 侧只需配置一次：**Settings → Models → Gateway → Configure g
 ```
 .
 ├── 部署.ps1                 一键部署 / -Check 只读自检 / -Uninstall 撤销
-├── 检查Magpie.ps1           只读检查：目录、白名单、标签、9 个渠道额度
+├── 检查Magpie.ps1           只读检查：目录、白名单、标签、10 个渠道额度
 ├── 启动Cursor多来源模型.ps1  修复工具：重设标签与白名单；-DryRun 只预览
 ├── Magpie网关守护.exe        托盘常驻，保证 3425 一直可用（编译产物）
-├── lib/MagpieCommon.ps1     公共模块：路径探测、UTF-8 读取、key 解析
-├── src/MagpieGatewayKeeper.cs  守护程序源码
+├── lib/MagpieCommon.ps1     公共模块：路径探测、UTF-8 读取、key 解析、stderr 安全封装
+├── lib/ModelLabels.ps1      模型标签表与已知不可用清单（唯一来源，两个脚本共用）
+├── src/MagpieGatewayKeeper.cs  守护程序源码（14 个池的池表在顶部 Pools 数组）
+├── src/PoolScheduler.cs     池内调度：额度、冷却、推理档位映射、换源提示
 ├── 鲸鱼娘/                   额度桌宠（独立子项目，见 鲸鱼娘说明.md）
 ├── archive/                 历史文件与本机专属备份（不入版本库）
 ├── 接入状态.md              各渠道接入过程记录
 └── README.md
 ```
+
+> 两个 `.ps1` 脚本的标签表已合并到 `lib/ModelLabels.ps1`。改模型时只改这一处，
+> 否则自检脚本会和启动脚本打架（历史上出过多次）。
 
 ## 可移植性设计
 
