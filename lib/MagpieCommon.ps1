@@ -117,6 +117,25 @@ function Test-Gateway {
 
 # ---------- gateway key ----------
 
+function Invoke-MagpieText {
+    # magpie 每次启动都往 stderr 写一行代理环境警告。在 $ErrorActionPreference='Stop' 下，
+    # 原生程序的 stderr 会被当成终止错误，导致脚本还没读到 stdout 就崩掉。
+    # 这里临时改成 Continue，把 stdout 与 stderr 一起收成文本返回，由调用方自己解析。
+    param(
+        [string] $Magpie,
+        [string[]] $Arguments
+    )
+
+    $prev = $ErrorActionPreference
+    try {
+        $ErrorActionPreference = 'Continue'
+        $out = (& $Magpie @Arguments 2>&1 | Out-String)
+    } finally {
+        $ErrorActionPreference = $prev
+    }
+    return $out
+}
+
 function Resolve-GatewayKeyId {
     # `magpie gateway-key list` 只接受 ID，不支持按名字，且没有 --json。
     # 从纯文本列表里按名称匹配，避免把本机的随机 ID 写死进脚本。
@@ -127,9 +146,9 @@ function Resolve-GatewayKeyId {
 
     if ($env:MAGPIE_GATEWAY_KEY_ID) { return $env:MAGPIE_GATEWAY_KEY_ID }
 
-    $listing = (& $Magpie gateway-key list 2>&1 | Out-String)
-    if ($LASTEXITCODE -ne 0) {
-        throw "无法读取 gateway-key 列表：$listing"
+    $listing = Invoke-MagpieText -Magpie $Magpie -Arguments @('gateway-key', 'list')
+    if (-not $listing) {
+        throw '无法读取 gateway-key 列表：magpie 没有返回任何内容'
     }
 
     # 每行形如：<id>  <name>  <state>  <key>  <limit>  <models>

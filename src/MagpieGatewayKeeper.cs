@@ -1,4 +1,4 @@
-﻿// Magpie 网关守护 + 自建路由池（托盘常驻）
+// Magpie 网关守护 + 自建路由池（托盘常驻）
 //
 // 下游：Cursor。上游：Magpie (127.0.0.1:3425)。
 //
@@ -62,7 +62,9 @@ namespace MagpieGatewayKeeper
                     new PoolMember("trae-cn/DeepSeek-V4-Pro", "Trae Pro"),
                     new PoolMember("trae-cn/DeepSeek-V4-Pro-max", "Trae Pro Max"),
                     new PoolMember("deepseek/deepseek-flash", "官方 API 付费"),
-                    new PoolMember("deepseek/deepseek-v4-pro", "官方 API Pro")
+                    new PoolMember("deepseek/deepseek-v4-pro", "官方 API Pro"),
+                    new PoolMember("opencode-go/deepseek-v4.1-flash", "OpenCode Go"),
+                    new PoolMember("opencode-go/deepseek-v4-pro", "OpenCode Go Pro")
                 }),
 
             new PoolDefinition(
@@ -83,7 +85,9 @@ namespace MagpieGatewayKeeper
                     new PoolMember("trae-cn/glm-5.3-flashx-max", "Trae FlashX Max"),
                     new PoolMember("loomy/GLM-5.3-Flash", "Loomy Flash"),
                     new PoolMember("raccoon/sn-glm-5-3-flash", "小浣熊 Flash"),
-                    new PoolMember("raccoon/sn-glm-5-3", "小浣熊 5.3")
+                    new PoolMember("raccoon/sn-glm-5-3", "小浣熊 5.3"),
+                    new PoolMember("opencode-go/glm-5.3", "OpenCode Go 5.3"),
+                    new PoolMember("opencode-go/glm-5.2", "OpenCode Go 5.2")
                 }),
 
             // Kimi 系列跨三代（K2.6 / K3 / K3.1），混在一个池里切换等于换模型，
@@ -98,7 +102,8 @@ namespace MagpieGatewayKeeper
                 new[]
                 {
                     new PoolMember("kimi-work/k3d1-agent", "Kimi 会员 K3.1"),
-                    new PoolMember("kimi-work/k3d1-agent-fast", "Kimi 会员 Fast")
+                    new PoolMember("kimi-work/k3d1-agent-fast", "Kimi 会员 Fast"),
+                    new PoolMember("opencode-go/kimi-k3.1-pro", "OpenCode Go K3.1 Pro")
                 }),
 
             new PoolDefinition(
@@ -109,7 +114,8 @@ namespace MagpieGatewayKeeper
                 {
                     new PoolMember("workbuddy-ai/kimi-k3", "WB K3"),
                     new PoolMember("raccoon/sn-kimi-k3", "小浣熊 K3"),
-                    new PoolMember("kimi-work/k3-agent", "Kimi 会员 K3")
+                    new PoolMember("kimi-work/k3-agent", "Kimi 会员 K3"),
+                    new PoolMember("opencode-go/kimi-k3", "OpenCode Go K3")
                 }),
 
             new PoolDefinition(
@@ -120,7 +126,8 @@ namespace MagpieGatewayKeeper
                 {
                     new PoolMember("kimi-work/k2d8-preview", "Kimi 会员 K2.8"),
                     new PoolMember("loomy/Kimi-k2.6", "Loomy K2.6"),
-                    new PoolMember("trae-cn/kimi-k2.7-code", "Trae K2.7")
+                    new PoolMember("trae-cn/kimi-k2.7-code", "Trae K2.7"),
+                    new PoolMember("opencode-go/kimi-k2.7-code", "OpenCode Go K2.7")
                 }),
 
             new PoolDefinition(
@@ -134,7 +141,8 @@ namespace MagpieGatewayKeeper
                     new PoolMember("trae-cn/glm-5.3-flash", "Trae Flash"),
                     new PoolMember("trae-cn/glm-5.3-flashx", "Trae FlashX"),
                     new PoolMember("loomy/GLM-5.3-Flash", "Loomy Flash"),
-                    new PoolMember("raccoon/sn-glm-5-3-flash", "小浣熊 Flash")
+                    new PoolMember("raccoon/sn-glm-5-3-flash", "小浣熊 Flash"),
+                    new PoolMember("opencode-go/glm-5.3-flash", "OpenCode Go Flash")
                 }),
 
             new PoolDefinition(
@@ -149,6 +157,89 @@ namespace MagpieGatewayKeeper
                     new PoolMember("trae-cn/Doubao-Seed-Code", "Seed Code"),
                     new PoolMember("trae-cn/Doubao-Seed-2.1-Pro-max", "Seed Pro Max"),
                     new PoolMember("trae-cn/Doubao-Seed-Evolving-max", "Seed Evolving Max")
+                }),
+
+            // OpenCode Go 接入后新增的家族池。这些家族此前每个只有一两个来源，
+            // 达不到成池的条件；现在有了第二个以上来源，才能做到"换源不换模型"。
+            new PoolDefinition(
+                "pool/gpt6-luna",
+                "GPT-6 Luna Pool",
+                1048576,
+                new[]
+                {
+                    new PoolMember("codex/gpt-6-luna", "Codex 订阅"),
+                    new PoolMember("workbuddy-ai/gpt-6-luna", "WB 额度"),
+                    new PoolMember("opencode-go/gpt-6-luna", "OpenCode Go")
+                }),
+
+            new PoolDefinition(
+                "pool/gpt56-luna",
+                "GPT-5.6 Luna Pool",
+                1048576,
+                new[]
+                {
+                    new PoolMember("codex/gpt-5.6-luna", "Codex 订阅"),
+                    new PoolMember("workbuddy-ai/gpt-5.6-luna", "WB 额度"),
+                    new PoolMember("opencode-go/gpt-5.6-luna", "OpenCode Go")
+                }),
+
+            new PoolDefinition(
+                "pool/grok-4.7",
+                "Grok 4.7 Pool",
+                1048576,
+                new[]
+                {
+                    new PoolMember("workbuddy-ai/grok-4.7", "WB 额度"),
+                    new PoolMember("opencode-go/grok-4.7", "OpenCode Go")
+                }),
+
+            new PoolDefinition(
+                "pool/hy",
+                "Hy Pool",
+                983010,
+                new[]
+                {
+                    new PoolMember("workbuddy-ai/hy3", "WB Hy3 免费"),
+                    new PoolMember("workbuddy-ai/hy4free", "WB Hy4"),
+                    new PoolMember("workbuddy-ai/hy4std", "WB Hy4 Std"),
+                    new PoolMember("opencode-go/hy3", "OpenCode Go Hy3"),
+                    new PoolMember("opencode-go/hy4", "OpenCode Go Hy4"),
+                    new PoolMember("opencode-go/hy4-preview", "OpenCode Go Hy4 Preview")
+                }),
+
+            new PoolDefinition(
+                "pool/minimax-m3.1-flash",
+                "MiniMax M3.1 Flash Pool",
+                1000000,
+                new[]
+                {
+                    new PoolMember("minimax-code/MiniMax-M3.1-Flash", "MiniMax 积分"),
+                    new PoolMember("workbuddy-ai/minimax-m3.1-flash", "WB 额度"),
+                    new PoolMember("opencode-go/minimax-m3.1-flash", "OpenCode Go")
+                }),
+
+            new PoolDefinition(
+                "pool/minimax-m3",
+                "MiniMax M3 Pool",
+                1000000,
+                new[]
+                {
+                    new PoolMember("minimax-code/MiniMax-M3", "MiniMax 积分"),
+                    new PoolMember("loomy/MiniMax-M3", "Loomy 积分"),
+                    new PoolMember("opencode-go/minimax-m3", "OpenCode Go")
+                }),
+
+            new PoolDefinition(
+                "pool/qwen",
+                "Qwen Pool",
+                1000000,
+                new[]
+                {
+                    new PoolMember("loomy/qwen-3.8-max", "Loomy 3.8 Max"),
+                    new PoolMember("loomy/qwen3.8-flash", "Loomy 3.8 Flash"),
+                    new PoolMember("opencode-go/qwen3.8-max", "OpenCode Go 3.8 Max"),
+                    new PoolMember("opencode-go/qwen3.8-flash", "OpenCode Go 3.8 Flash"),
+                    new PoolMember("opencode-go/qwen3.7-plus", "OpenCode Go 3.7 Plus")
                 })
         };
 

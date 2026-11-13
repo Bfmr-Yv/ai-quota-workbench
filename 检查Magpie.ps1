@@ -13,77 +13,9 @@ $magpie = Find-MagpieExe
 $cfg = Get-GatewayConfig -BaseUrl $BaseUrl -Key $Key
 $keyId = Resolve-GatewayKeyId -Magpie $magpie
 
-$modelLabels = [ordered]@{
-    'group/deepseek-flash-pool' = 'DeepSeek Flash Pool'
-    'loomy/DeepSeek-V4.1-Flash' = 'DeepSeek-V4.1-Flash · Loomy积分 · 单价未知'
-    'loomy/deepseek-v4-flash-0731' = 'deepseek-v4-flash-0731 · Loomy积分 · 单价未知'
-    'loomy/MiniMax-M3' = 'MiniMax-M3 · Loomy积分 · 单价未知'
-    'loomy/Kimi-k2.6' = 'Kimi-k2.6 · Loomy积分 · 单价未知'
-    'loomy/qwen-3.8-max' = 'qwen-3.8-max · Loomy积分 · 单价未知'
-    'loomy/GLM-5.3-Flash' = 'GLM-5.3-Flash · Loomy积分 · 单价未知'
-    'loomy/qwen3.8-flash' = 'qwen3.8-flash · Loomy积分 · 单价未知'
-    'loomy/spark-x' = 'spark-x · Loomy积分 · 单价未知'
-    'loomy/mimo-v2.5' = 'mimo-v2.5 · Loomy积分 · 单价未知'
-    'loomy/spark-x2.6' = 'spark-x2.6 · Loomy积分 · 单价未知'
-    'zcode/GLM-5.3-Flash' = 'GLM 5.3 Flash · ZCode Start Plan'
-    'zcode/GLM-5.3' = 'GLM 5.3 · ZCode Start Plan'
-    'zcode/GLM-5.3-Trial' = 'GLM 5.3 Trial · ZCode活动额度'
-    'zcode/GLM-5.3-Flash-Trial' = 'GLM 5.3 Flash Trial · ZCode活动额度'
-    'minimax-code/MiniMax-M3.1-Flash' = 'MiniMax M3.1 Flash · MiniMax积分'
-    'minimax-code/MiniMax-M3' = 'MiniMax M3 · MiniMax积分'
-    'raccoon/raccoon-090dd3' = 'Raccoon-Work · 小浣熊积分 · 单价未知'
-    'raccoon/raccoon-19b265' = 'Raccoon-Work-260817-A · 小浣熊积分 · 单价未知'
-    'raccoon/raccoon-405a1c' = 'Raccoon-Work-260817-B · 小浣熊积分 · 单价未知'
-    'raccoon/sn-sensenova-6-8-flash' = 'SenseNova-6.8-Flash · 小浣熊积分 · 单价未知'
-    'raccoon/sn-sensenova-6-8-flash-lite' = 'SenseNova-6.8-Flash-Lite · 小浣熊积分 · 单价未知'
-    'raccoon/sn-glm-5-3' = 'GLM-5-3 · 小浣熊积分 · 单价未知'
-    'raccoon/sn-kimi-k3' = 'Kimi-K3 · 小浣熊积分 · 单价未知'
-    'raccoon/sn-glm-5-3-flash' = 'GLM-5-3-Flash · 小浣熊积分 · 单价未知'
-    'raccoon/sn-deepseek-v4-1-flash-1017' = 'DeepSeek-V4.1-Flash-1017 · 小浣熊积分 · 单价未知'
-    'raccoon/raccoon-chat-ml-5-5' = 'Raccoon Chat (默认) · 小浣熊积分 · 单价未知'
-    'trae-cn/Doubao-Seed-2.1-Turbo' = 'Doubao-Seed-2.1-Turbo · Trae积分 · 单价未知'
-    'trae-cn/Doubao-Seed-2.1-Pro' = 'Doubao-Seed-2.1-Pro · Trae积分 · 单价未知'
-    'trae-cn/Doubao-Seed-Evolving' = 'Doubao-Seed-Evolving · Trae积分 · 单价未知'
-    'trae-cn/Doubao-Seed-Code' = 'Doubao-Seed-Code · Trae积分 · 单价未知'
-    'trae-cn/glm-5.3-flash' = 'glm-5.3-flash · Trae积分 · 单价未知'
-    'trae-cn/glm-5.3-flashx' = 'glm-5.3-flashx · Trae积分 · 单价未知'
-    'trae-cn/glm-5.3' = 'glm-5.3 · Trae积分 · 单价未知'
-    'trae-cn/glm-5.2' = 'glm-5.2 · Trae积分 · 单价未知'
-    'trae-cn/DeepSeek-V4-Flash' = 'DeepSeek-V4-Flash · Trae积分 · 单价未知'
-    'trae-cn/deepseek-v4.1-flash' = 'deepseek-v4.1-flash · Trae积分 · 单价未知'
-    'trae-cn/DeepSeek-V4-Pro' = 'DeepSeek-V4-Pro · Trae积分 · 单价未知'
-    'trae-cn/kimi-k2.7-code' = 'kimi-k2.7-code · Trae积分 · 单价未知'
-    'workbuddy-ai/hy3' = 'Hy3 · 免费（¥0）'
-    'workbuddy-ai/deepseek-v4.1-flash-sg' = 'DeepSeek V4.1 Flash · WB额度 · 单价未知'
-    'workbuddy-ai/glm-5.3' = 'GLM 5.3 · WB额度 · 单价未知'
-    'workbuddy-ai/glm-5.3-flash' = 'GLM 5.3 Flash · WB额度 · 单价未知'
-    'workbuddy-ai/kimi-k3' = 'Kimi K3 · WB额度 · 单价未知'
-    'workbuddy-ai/minimax-m3.1-flash' = 'MiniMax M3.1 Flash · WB额度 · 单价未知'
-    'kimi-work/k3d1-agent' = 'K3.1 Pro · 月度会员共享额度 · 价格未知'
-    'kimi-work/k2d8-preview' = 'K2.8 Preview · 月度会员共享额度 · 价格未知'
-    'kimi-work/k3-agent' = 'K3 · 月度会员共享额度 · 价格未知'
-    'xiaomi/mimo-v2.6-pro' = 'MiMo V2.6 Pro · TP 2.5/300/600 cr/t · API ¥3/6/M'
-    'xiaomi/mimo-v2.6-flash' = 'MiMo V2.6 Flash · TP 2/100/200 cr/t · API ¥1/2/M'
-    'deepseek/deepseek-flash' = 'V4.1 Flash · 官方 API $0.15/$0.60/M off-peak'
-    'deepseek/deepseek-v4-pro' = 'V4 Pro · 官方 API $0.66/$1.98/M off-peak'
-    'trae-cn/glm-5.3-max' = 'GLM-5.3 Max · Trae积分 · 单价未知'
-    'trae-cn/glm-5.3-flash-max' = 'GLM-5.3-Flash Max · Trae积分 · 单价未知'
-    'trae-cn/glm-5.3-flashx-max' = 'GLM-5.3-FlashX Max · Trae积分 · 单价未知'
-    'trae-cn/glm-5.2-max' = 'GLM-5.2 Max · Trae积分 · 单价未知'
-    'trae-cn/glm-5.2_advisor_doubao' = 'GLM 5.2 · Trae积分 · 单价未知'
-    'trae-cn/glm-5.1' = 'GLM 5.1 · Trae积分 · 单价未知'
-    'trae-cn/glm-5' = 'GLM 5 · Trae积分 · 单价未知'
-    'trae-cn/glm-4.7' = 'GLM 4.7 · Trae积分 · 单价未知'
-    'trae-cn/glm-4.6' = 'GLM 4.6 · Trae积分 · 单价未知'
-    'trae-cn/DeepSeek-V4-Flash-max' = 'DeepSeek-V4-Flash Max · Trae积分 · 单价未知'
-    'trae-cn/DeepSeek-V4-Pro-max' = 'DeepSeek-V4-Pro Max · Trae积分 · 单价未知'
-    'trae-cn/Doubao-Seed-2.1-Pro-max' = 'Seed 2.1 Pro Max · Trae积分 · 单价未知'
-    'trae-cn/Doubao-Seed-Evolving-max' = 'Seed Evolving Max · Trae积分 · 单价未知'
-    'workbuddy-ai/hy4free' = 'Hy4 · WB额度 · 单价未知'
-    'workbuddy-ai/hy4std' = 'Hy4 Std · WB额度 · 单价未知'
-    'kimi-work/k3d1-agent-fast' = 'K3.1 Pro Fast · 月度会员共享额度 · 价格未知'
-    'loomy/auto' = 'Loomy Auto · 自动均衡 · 积分'
-}
+. (Join-Path $PSScriptRoot 'lib\ModelLabels.ps1')
+$modelLabels = Get-ModelLabels
+$knownUnavailable = Get-KnownUnavailableModels
 $expectedModelIds = @($modelLabels.Keys)
 
 Write-Section 'Magpie 与网关'
@@ -92,8 +24,8 @@ Write-Host ('gateway    : ' + $cfg.BaseUrl)
 Write-Host ('gateway key: ' + $keyId)
 
 Write-Section 'WorkBuddy AI 免费限制'
-$options = (& $magpie plugin options workbuddy 2>&1 | Out-String)
-if ($LASTEXITCODE -ne 0) { throw "无法读取 WorkBuddy 插件选项：$options" }
+$options = Invoke-MagpieText -Magpie $magpie -Arguments @('plugin','options','workbuddy')
+if (-not $options) { throw '无法读取 WorkBuddy 插件选项：magpie 没有返回任何内容' }
 if ($options -match 'free_only\s+workbuddy(-ai)?\s+on') {
     Write-Host 'free_only 开启：仅免费模型可用。'
 } else {
@@ -101,16 +33,18 @@ if ($options -match 'free_only\s+workbuddy(-ai)?\s+on') {
 }
 
 Write-Section 'Cursor gateway-key 白名单'
-$policy = (& $magpie gateway-key models $keyId 2>&1 | Out-String)
-if ($LASTEXITCODE -ne 0) { throw "无法读取 gateway-key 白名单：$policy" }
-$missingInKey = @($expectedModelIds | Where-Object { $policy -notlike "*$_*" })
+$policy = Invoke-MagpieText -Magpie $magpie -Arguments @('gateway-key','models',$keyId)
+if (-not $policy) { throw '无法读取 gateway-key 白名单：magpie 没有返回任何内容' }
+# pool/* 由本项目的守护程序在 3426 上自建，不是 Magpie 的上游模型，不该出现在 Magpie 白名单里。
+$upstreamIds = @($expectedModelIds | Where-Object { $_ -notlike 'pool/*' })
+$missingInKey = @($upstreamIds | Where-Object { $policy -notlike "*$_*" })
 if ($missingInKey.Count -gt 0) {
     throw ('白名单缺少模型：' + ($missingInKey -join ', '))
 }
 if ($policy -match 'codex/|deepseek-2/') {
     throw 'Cursor 白名单里出现了应被排除的 Codex 或失效的 deepseek-2。'
 }
-Write-Host ("白名单已包含全部 {0} 个模型；Codex/GPT 与失效 key 均不在其中。" -f $expectedModelIds.Count)
+Write-Host ("白名单已包含全部 {0} 个上游模型；Codex/GPT 与失效 key 均不在其中。" -f $upstreamIds.Count)
 
 Write-Section 'Cursor 模型目录与标签'
 $probe = Test-Gateway -Config $cfg
@@ -119,17 +53,34 @@ if (-not $probe.Ok) {
 }
 $modelData = @($probe.Models)
 $actualModelIds = @($modelData | ForEach-Object { $_.id })
-$unexpected = @($actualModelIds | Where-Object { $_ -notin $expectedModelIds })
-$missing = @($expectedModelIds | Where-Object { $_ -notin $actualModelIds })
-$badLabels = @($modelData | Where-Object { $modelLabels.Contains($_.id) -and $modelLabels[$_.id] -ne $_.display_name })
-if ($actualModelIds.Count -ne $expectedModelIds.Count -or $unexpected.Count -gt 0 -or $missing.Count -gt 0 -or $badLabels.Count -gt 0) {
-    throw ("目录不一致。缺少：{0}；多余：{1}；标签需修正：{2}" -f
-        ($missing -join ', '), ($unexpected -join ', '), (($badLabels | ForEach-Object { $_.id }) -join ', '))
+# 这里查的是 Magpie 本体目录（3425），pool/* 由守护程序在 3426 上另建，
+# 因此比对时把 pool/* 排除；池的可用性由 3426 的独立探测覆盖。
+$expectedUpstream = @($expectedModelIds | Where-Object { $_ -notlike 'pool/*' })
+$actualUpstream = @($actualModelIds | Where-Object { $_ -notlike 'pool/*' })
+$unexpected = @($actualUpstream | Where-Object { $_ -notin $expectedUpstream })
+$missing = @($expectedUpstream | Where-Object { $_ -notin $actualUpstream })
+# Magpie 的路由分组（group/*）、自动均衡（auto/*）不是具体模型，不参与比对。
+$unexpected = @($unexpected | Where-Object { $_ -notlike 'group/*' -and $_ -notlike 'auto/*' -and -not $knownUnavailable.ContainsKey($_) })
+# 上游目录会随时变动（模型下线、额度用尽被隐藏），缺失只提示不阻断。
+
+# 标签只做提示，不当作硬失败：Magpie 会自行加后缀，这不影响可用性。
+$labelDrift = @($modelData | Where-Object {
+    $modelLabels.Contains($_.id) -and $modelLabels[$_.id] -ne $_.display_name -and $_.id -notlike 'pool/*'
+})
+
+if ($missing.Count -gt 0) {
+    Write-Host ('提示：{0} 个上游模型当前不在网关目录里（可能额度用尽或上游已下线）：{1}' -f $missing.Count, ($missing -join ', '))
+}
+if ($unexpected.Count -gt 0) {
+    throw ("目录里出现了标签表未登记的模型：{0}" -f ($unexpected -join ', '))
+}
+if ($labelDrift.Count -gt 0) {
+    Write-Host ('注意：{0} 个模型的显示名由 Magpie 自动命名，与配置不同（非错误）。' -f $labelDrift.Count)
 }
 $modelData | ForEach-Object { Write-Host ("{0} — {1}" -f $_.id, $_.display_name) }
 
 # ---------- 额度 ----------
-$quotaProviders = @('workbuddy-ai', 'kimi-work', 'xiaomi', 'deepseek', 'trae-cn', 'raccoon', 'zcode', 'minimax-code', 'loomy')
+$quotaProviders = @('workbuddy-ai', 'kimi-work', 'xiaomi', 'deepseek', 'trae-cn', 'raccoon', 'zcode', 'minimax-code', 'loomy', 'opencode-go')
 foreach ($provider in $quotaProviders) {
     Write-Section ('额度：' + $provider)
     try {
@@ -186,3 +137,4 @@ foreach ($provider in $quotaProviders) {
 Write-Section '结果'
 Write-Host '全部检查通过。'
 exit 0
+

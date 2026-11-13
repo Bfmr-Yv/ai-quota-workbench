@@ -82,6 +82,10 @@ Cursor 侧只需配置一次：**Settings → Models → Gateway → Configure g
 
 ### DeepSeek Flash 混池
 
+> **已废弃**：早期的 `group/deepseek-flash-pool` 已被自建的 `pool/deepseek-flash` 取代
+> （`group/*` 条目缺 `native_endpoints`，Cursor 会直接丢弃，详见下文「为什么池在 Cursor 里看不到」）。
+> 下面保留原始记录，仅作历史参考。
+
 `group/deepseek-flash-pool` 把 8 个来源聚成一个池，Cursor 里显示为 **DeepSeek Flash Pool**。顺序为：WorkBuddy → Loomy → Trae → 小浣熊的 DeepSeek V4.1 Flash，其次 Loomy MiMo V2.5、小米 MiMo V2.6 Flash/Pro，最后由 DeepSeek 官方 API 兜底。`routing=order`、`stays=turn`：每轮重新选源，单轮内保持同一来源。
 
 8 个成员均已实测可用。官方 API 兜底会消耗余额，积分来源也不保证无限免费。
@@ -254,15 +258,28 @@ Base URL 改为 `http://127.0.0.1:3426/v1`，API Key 仍是 `magpie-cursor-local
 
 ### 多池
 
-守护程序从「单池」改为「多池」，每个池对外暴露一个模型 id：
+守护程序从「单池」改为「多池」，每个池对外暴露一个模型 id。
+
+当前 14 个池（2026-11-13 接入 OpenCode Go 后）：
 
 | 池 id | 显示名 | 成员数 | 用途 |
 |---|---|---|---|
-| `pool/deepseek-flash` | DeepSeek Flash Pool | 12 | DeepSeek 全系，含 Max/Pro 变体 |
-| `pool/glm` | GLM Pool | 13 | GLM 5.3 全系，含 Flash/FlashX/Max |
-| `pool/kimi` | Kimi Pool | 9 | K3 / K3.1 / Fast / K2.7 / K2.6 |
-| `pool/glm-flash` | GLM Flash Pool | 6 | GLM 5.3 Flash 系列，低延迟优先 |
+| `pool/deepseek-flash` | DeepSeek Flash Pool | 14 | DeepSeek 全系，含 Max/Pro 变体 |
+| `pool/glm` | GLM Pool | 15 | GLM 5.2 / 5.3 全系，含 Flash/FlashX/Max |
+| `pool/glm-flash` | GLM Flash Pool | 7 | GLM 5.3 Flash 系列，低延迟优先 |
+| `pool/kimi-k3.1` | Kimi K3.1 Pool | 3 | K3.1 代际 |
+| `pool/kimi-k3` | Kimi K3 Pool | 4 | K3 代际 |
+| `pool/kimi-k2` | Kimi K2 Pool | 4 | K2.6 / K2.7 / K2.8 |
 | `pool/doubao` | Doubao Pool | 6 | Seed 2.1 / Evolving / Code |
+| `pool/gpt6-luna` | GPT-6 Luna Pool | 3 | Codex / WB / OpenCode Go |
+| `pool/gpt56-luna` | GPT-5.6 Luna Pool | 3 | Codex / WB / OpenCode Go |
+| `pool/grok-4.7` | Grok 4.7 Pool | 2 | WB / OpenCode Go |
+| `pool/hy` | Hy Pool | 6 | Hy3 / Hy4 / Hy4 Std / Hy4 Preview |
+| `pool/minimax-m3.1-flash` | MiniMax M3.1 Flash Pool | 3 | MiniMax / WB / OpenCode Go |
+| `pool/minimax-m3` | MiniMax M3 Pool | 3 | MiniMax / Loomy / OpenCode Go |
+| `pool/qwen` | Qwen Pool | 5 | Qwen3.8 Max/Flash、Qwen3.7 Plus |
+
+Kimi 按代际拆成三个池的原因见下文「Kimi 分代」：跨代切换等于换模型，会明显掉质量。
 
 关键设计：
 
@@ -373,3 +390,79 @@ Cursor 若发送 `medium` 或 `max`，而目标成员不支持，有的供应商
 ### 教训
 
 `magpie models` 列出某个模型，不代表当前账号有权限调用。WorkBuddy 这类订阅型来源尤其明显：目录是全网可见的，权限按账号类型收紧。**新加成员前必须实测一次**，否则每次请求都会先撞一次 400 再回退，白白增加延迟。
+## 2026-11-13 接入 OpenCode Go
+
+新订阅 OpenCode Go（订阅制，额度分 **5 小时 / 7 天 / 月** 三个窗口），作为第 12 个来源接入。
+
+### 接入过程
+
+```
+magpie provider add opencode-go <key>     # 自动拉目录，共 30 个模型
+```
+
+默认只暴露前 24 个，用 `magpie provider models opencode-go +<model>` 把另外 6 个也补齐，
+其中 **`kimi-k3.1-pro`** 和 **`hy4`** 正好补上 Kimi K3.1 池缺的成员。
+
+### 逐个实测：25 可用 / 5 不可用
+
+目录 30 个，实测 25 个可用。不可用的 5 个全是 OpenCode 侧的**隐私策略**限制，不是权限不足：
+
+| 模型 | 原因 | 解决 |
+|---|---|---|
+| `deepseek-v4.1-flash` | 模型托管在欧洲/美国之外 | 控制台 Privacy → Regions 选 **Global** |
+| `deepseek-v4-pro` | 同上 | 同上 |
+| `longcat-2.5-free` | 同上 | 同上 |
+| `muse-spark-1.2-contributor` | 模型会用请求数据训练 | Privacy → Training 打开「Allow paid endpoints that train on request data」 |
+| `muse-spark-1.3-contributor` | 同上 | 同上 |
+
+> 这两个开关会**放开隐私边界**，默认保持不动。因此 `deepseek-v4.1-flash` / `deepseek-v4-pro`
+> **暂时没有进 DeepSeek 池**——要在 DeepSeek 池里加，得先去控制台开 Global。
+
+### 新增 7 个池
+
+OpenCode Go 带来的第二个以上来源，使这些家族第一次具备成池条件：
+
+`pool/gpt6-luna`、`pool/gpt56-luna`、`pool/grok-4.7`、`pool/hy`、
+`pool/minimax-m3.1-flash`、`pool/minimax-m3`、`pool/qwen`
+
+池总数 7 → **14**。
+
+### ⚠️ 关键坑：`gateway-key models <id> <list>` 是**替换**不是追加
+
+接入过程中执行了：
+
+```
+magpie gateway-key models a50066c17bf0327018000b71 opencode-go/<各模型>
+```
+
+结果**整份白名单被替换成只剩 30 个 opencode-go 模型**，原有 69 条全部丢失。
+症状具有迷惑性：所有池同时返回 502「all pool members failed」，而并非 opencode-go 的池也挂了。
+
+正确做法是**一次性传完整列表**（原子覆盖）：
+
+```powershell
+$all = $既有条目 + $新增条目
+magpie gateway-key models <id> @all
+```
+
+已恢复为 **99 条**（原 69 + 新 30 = 99）。
+
+### 教训
+
+1. **改白名单前先 dump 当前列表**：`magpie gateway-key models <id>` 输出就是完整备份。
+2. **改完立刻跑单模型探测**，不要直接跑池——池的 502 会掩盖真实的 403 原因。
+3. **测试必须打 3426**。3425 是 Magpie 本体，不认 `pool/*`，会返回 404 并提示 `group/deepseek-flash-pool`。
+
+### 顺手修掉的结构问题
+
+两个脚本各带一份 73 行标签表，改一处忘另一处就会让自检脚本报错（历史上已经出过）。
+现在抽成 `lib/ModelLabels.ps1` 单一来源，`启动Cursor多来源模型.ps1` 和 `检查Magpie.ps1` 都从它取。
+
+> PowerShell 5.1 按 ANSI 解码无 BOM 的 .ps1，中文会乱码并引发语法错误。
+> **任何新建的 .ps1 都必须写 UTF-8 BOM。**
+
+### 实测结果
+
+- 14 个池全部返回 200
+- 标签表 108 条（14 池 + 26 个 OpenCode Go 模型 + 原有来源）
+- 网关 key 白名单 99 条
