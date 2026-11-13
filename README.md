@@ -1,4 +1,4 @@
-# AI 额度开发工作台
+﻿# AI 额度开发工作台
 
 把多个 AI 订阅与 API 渠道聚合成一个本地网关，供 Cursor Private Inference 使用；标清每个模型的来源与计价方式，并保证网关长期在线。
 
@@ -410,18 +410,24 @@ magpie provider add opencode-go <key>     # 自动拉目录，共 30 个模型
 
 ### 逐个实测：25 可用 / 5 不可用
 
-目录 30 个，实测 25 个可用。不可用的 5 个全是 OpenCode 侧的**隐私策略**限制，不是权限不足：
+目录 30 个，初测 25 个可用。不可用的 5 个全是 OpenCode 侧的**隐私策略**限制，不是权限不足：
 
-| 模型 | 原因 | 解决 |
-|---|---|---|
-| `deepseek-v4.1-flash` | 模型托管在欧洲/美国之外 | 控制台 Privacy → Regions 选 **Global** |
-| `deepseek-v4-pro` | 同上 | 同上 |
-| `longcat-2.5-free` | 同上 | 同上 |
-| `muse-spark-1.2-contributor` | 模型会用请求数据训练 | Privacy → Training 打开「Allow paid endpoints that train on request data」 |
-| `muse-spark-1.3-contributor` | 同上 | 同上 |
+| 模型 | 原因 | 解决 | 现状 |
+|---|---|---|---|
+| `deepseek-v4.1-flash` | 模型托管在欧洲/美国之外 | Privacy → Regions 选 **Global** | ✅ 已开，实测 200，在 DeepSeek 池 |
+| `deepseek-v4-pro` | 同上 | 同上 | ✅ 已开，在 DeepSeek 池 |
+| `longcat-2.5-free` | 同上 | 同上 | ✅ 已开，单模型可选 |
+| `muse-spark-1.2-contributor` | 模型会用请求数据训练 | Privacy → Training 打开「Allow paid endpoints that train on request data」 | ❌ 保持关闭 |
+| `muse-spark-1.3-contributor` | 同上 | 同上 | ❌ 保持关闭 |
 
-> 这两个开关会**放开隐私边界**，默认保持不动。因此 `deepseek-v4.1-flash` / `deepseek-v4-pro`
-> **暂时没有进 DeepSeek 池**——要在 DeepSeek 池里加，得先去控制台开 Global。
+**Regions 选 Global 的后果**：欧洲与美国始终启用，Global 额外允许托管在其他区域的 Go 模型。
+OpenCode 明确写着「这不会改变 API 端点，也不保证数据驻留」。
+
+**Training 的付费端点开关保持关闭**：打开只会换来两个 contributor 模型，代价是让模型用你的代码训练。
+另有 `iceman-contributor-free` 属同一限制，也未启用。
+
+未启用的三个已登记在 `lib/ModelLabels.ps1` 的 `Get-KnownUnavailableModels`，
+自检脚本会把它们和「漏登记」区分开，也不会在 Cursor 里出现点了就报错的死项。
 
 ### 新增 7 个池
 
@@ -469,5 +475,5 @@ magpie gateway-key models <id> @all
 ### 实测结果
 
 - 14 个池全部返回 200
-- 标签表 108 条（14 池 + 26 个 OpenCode Go 模型 + 原有来源）
-- 网关 key 白名单 99 条
+- 标签表 109 条（14 池 + 27 个 OpenCode Go 模型 + 原有来源）
+- 网关 key 白名单 99 条（含全部 opencode-go）

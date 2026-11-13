@@ -116,6 +116,7 @@ function Get-ModelLabels {
         'opencode-go/minimax-m3' = 'MiniMax-M3 · OpenCode Go'
         'opencode-go/minimax-m3.1-flash' = 'MiniMax M3.1 Flash · OpenCode Go'
         'opencode-go/longcat-2.0' = 'LongCat-2.0 · OpenCode Go'
+        'opencode-go/longcat-2.5-free' = 'LongCat 2.5 Free · OpenCode Go'
         'opencode-go/step-5-preview' = 'Step 5 Preview · OpenCode Go'
         'opencode-go/beam-free' = 'Beam Free · OpenCode Go'
         'opencode-go/qwen3.8-max' = 'Qwen3.8 Max · OpenCode Go'
@@ -136,10 +137,10 @@ function Get-VisibleProviders {
 # 要启用某个：先去 OpenCode 控制台改 Privacy 设置，再把它移进 Get-ModelLabels。
 function Get-KnownUnavailableModels {
     @{
-        'opencode-go/deepseek-v4.1-flash'        = '托管在欧洲/美国之外，需控制台 Privacy → Regions 选 Global'
-        'opencode-go/deepseek-v4-pro'            = '同上'
-        'opencode-go/longcat-2.5-free'           = '同上'
-        'opencode-go/muse-spark-1.2-contributor' = '会用请求数据训练，需控制台 Privacy → Training 打开付费端点'
+        # 2026-11-13：控制台 Privacy → Regions 已设为 Global，
+        # deepseek-v4.1-flash / deepseek-v4-pro / longcat-2.5-free 三个实测已返回 200，
+        # 因此移出本清单。前两个已在 pool/deepseek-flash 里，longcat 作为单模型可选。
+        'opencode-go/muse-spark-1.2-contributor' = '会用请求数据训练，需控制台 Privacy → Training 打开「付费端点」开关'
         'opencode-go/muse-spark-1.3-contributor' = '同上'
         'opencode-go/iceman-contributor-free'    = '同上'
     }
