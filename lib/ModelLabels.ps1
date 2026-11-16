@@ -36,10 +36,9 @@ function Get-ModelLabels {
         'loomy/spark-x' = 'spark-x · Loomy积分 · 单价未知'
         'loomy/mimo-v2.5' = 'mimo-v2.5 · Loomy积分 · 单价未知'
         'loomy/spark-x2.6' = 'spark-x2.6 · Loomy积分 · 单价未知'
-        'zcode/GLM-5.3-Flash' = 'GLM 5.3 Flash · ZCode Start Plan'
-        'zcode/GLM-5.3' = 'GLM 5.3 · ZCode Start Plan'
-        'zcode/GLM-5.3-Trial' = 'GLM 5.3 Trial · ZCode活动额度'
-        'zcode/GLM-5.3-Flash-Trial' = 'GLM 5.3 Flash Trial · ZCode活动额度'
+        # ZCode 的 Start Plan 于 2026-11-16 确认已结束（无 GLM Coding Plan），
+        # 该账号所有模型调用均返回 429。已从 GLM / GLM Flash 池移除，
+        # 也不再暴露给 Cursor，避免每次请求先撞一次 429 再回退。
         'minimax-code/MiniMax-M3.1-Flash' = 'MiniMax M3.1 Flash · MiniMax积分'
         'minimax-code/MiniMax-M3' = 'MiniMax M3 · MiniMax积分'
         'raccoon/raccoon-090dd3' = 'Raccoon-Work · 小浣熊积分 · 单价未知'
@@ -128,7 +127,7 @@ function Get-ModelLabels {
 
 # 在 Magpie 里显式 visible 的来源。
 function Get-VisibleProviders {
-    @('workbuddy-ai', 'kimi-work', 'xiaomi', 'deepseek', 'trae-cn', 'raccoon', 'zcode', 'minimax-code', 'loomy', 'opencode-go')
+    @('workbuddy-ai', 'kimi-work', 'xiaomi', 'deepseek', 'trae-cn', 'raccoon', 'minimax-code', 'loomy', 'opencode-go')
 }
 
 # 故意不暴露给 Cursor 的模型：目录里有，但调用会被上游隐私策略拒绝。

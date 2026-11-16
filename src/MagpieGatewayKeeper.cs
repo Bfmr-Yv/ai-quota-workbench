@@ -73,8 +73,6 @@ namespace MagpieGatewayKeeper
                 1000000,
                 new[]
                 {
-                    new PoolMember("zcode/GLM-5.3-Flash", "ZCode Flash"),
-                    new PoolMember("zcode/GLM-5.3", "ZCode 5.3"),
                     new PoolMember("workbuddy-ai/glm-5.3-flash", "WB Flash"),
                     new PoolMember("workbuddy-ai/glm-5.3", "WB 5.3"),
                     new PoolMember("trae-cn/glm-5.3-flash", "Trae Flash"),
@@ -136,7 +134,6 @@ namespace MagpieGatewayKeeper
                 1000000,
                 new[]
                 {
-                    new PoolMember("zcode/GLM-5.3-Flash", "ZCode Flash"),
                     new PoolMember("workbuddy-ai/glm-5.3-flash", "WB Flash"),
                     new PoolMember("trae-cn/glm-5.3-flash", "Trae Flash"),
                     new PoolMember("trae-cn/glm-5.3-flashx", "Trae FlashX"),
@@ -465,7 +462,8 @@ namespace MagpieGatewayKeeper
     internal sealed class GatewayProxy : IDisposable
     {
         private readonly HttpListener _listener;
-        private readonly JavaScriptSerializer _json = new JavaScriptSerializer();
+        // Cursor Agent requests can exceed the serializer default of 2,097,152 characters.
+        private readonly JavaScriptSerializer _json = new JavaScriptSerializer { MaxJsonLength = int.MaxValue };
         private Thread _thread;
         private volatile bool _stopping;
 
